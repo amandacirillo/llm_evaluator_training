@@ -1,0 +1,8 @@
+{
+  "_comment": "Evaluator tunables (non-secret; committed). Only LITELLM_API_KEY and LITELLM_API_BASE live in .env. Set the model ids below to exact ids your LiteLLM proxy serves. 'council' is the default judge set (resolved against the proxy at runtime; a member the proxy doesn't serve is dropped, and a missing second claude-sonnet is auto-picked). 'backup_judge' restores an odd-sized council, or is the fallback judge if the configured council would otherwise be empty. 'samples' is how many times each model is called in scoring mode. 'output_temperature' is for the compared models (judges always run at 0).",
+  "checklist_model": "claude-sonnet-4-6",
+  "council": ["claude-sonnet-4-6", "gpt-5.4", "gpt-4o"],
+  "backup_judge": "gpt-5.4-mini",
+  "samples": 5,
+  "output_temperature": 0
+}

@@ -1,0 +1,1007 @@
+{
+ "Resources": {
+  "UserPool6BA7E5F2": {
+   "Type": "AWS::Cognito::UserPool",
+   "Properties": {
+    "AccountRecoverySetting": {
+     "RecoveryMechanisms": [
+      {
+       "Name": "verified_email",
+       "Priority": 1
+      }
+     ]
+    },
+    "AdminCreateUserConfig": {
+     "AllowAdminCreateUserOnly": true
+    },
+    "AliasAttributes": [
+     "email"
+    ],
+    "AutoVerifiedAttributes": [
+     "email"
+    ],
+    "EmailVerificationMessage": "The verification code to your new account is {####}",
+    "EmailVerificationSubject": "Verify your new account",
+    "Policies": {
+     "PasswordPolicy": {
+      "MinimumLength": 8,
+      "RequireLowercase": true,
+      "RequireNumbers": true,
+      "RequireSymbols": true,
+      "RequireUppercase": true
+     }
+    },
+    "Schema": [
+     {
+      "Mutable": true,
+      "Name": "email",
+      "Required": true
+     }
+    ],
+    "SmsVerificationMessage": "The verification code to your new account is {####}",
+    "UserPoolName": "llm-evaluator-nonprod",
+    "VerificationMessageTemplate": {
+     "DefaultEmailOption": "CONFIRM_WITH_CODE",
+     "EmailMessage": "The verification code to your new account is {####}",
+     "EmailSubject": "Verify your new account",
+     "SmsMessage": "The verification code to your new account is {####}"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/UserPool/Resource"
+   }
+  },
+  "UserPoolClient2F5918F7": {
+   "Type": "AWS::Cognito::UserPoolClient",
+   "Properties": {
+    "AllowedOAuthFlows": [
+     "code"
+    ],
+    "AllowedOAuthFlowsUserPoolClient": true,
+    "AllowedOAuthScopes": [
+     "openid",
+     "email",
+     "profile"
+    ],
+    "CallbackURLs": [
+     "https://llm-evaluator.aidev-nonprod.example.internal/oauth2/idpresponse"
+    ],
+    "ClientName": "llm-evaluator-nonprod-alb",
+    "GenerateSecret": true,
+    "LogoutURLs": [
+     "https://llm-evaluator.aidev-nonprod.example.internal"
+    ],
+    "SupportedIdentityProviders": [
+     "COGNITO"
+    ],
+    "UserPoolId": {
+     "Ref": "UserPool6BA7E5F2"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/UserPoolClient/Resource"
+   }
+  },
+  "UserPoolDomain5479B217": {
+   "Type": "AWS::Cognito::UserPoolDomain",
+   "Properties": {
+    "Domain": "llm-evaluator-nonprod-123456789012",
+    "UserPoolId": {
+     "Ref": "UserPool6BA7E5F2"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/UserPoolDomain/Resource"
+   }
+  },
+  "ClusterEB0386A7": {
+   "Type": "AWS::ECS::Cluster",
+   "Properties": {
+    "ClusterName": "llm-evaluator-nonprod"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Cluster/Resource"
+   }
+  },
+  "TaskDefTaskRole1EDB4A67": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/TaskDef/TaskRole/Resource"
+   }
+  },
+  "TaskDef54694570": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "ENVIRONMENT",
+        "Value": "nonprod"
+       },
+       {
+        "Name": "LITELLM_API_KEY",
+        "Value": "fake"
+       },
+       {
+        "Name": "LITELLM_API_BASE",
+        "Value": "https://litellm.example.com"
+       },
+       {
+        "Name": "LITELLM_MODEL",
+        "Value": "fake-model"
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Join": [
+        "",
+        [
+         "123456789012.dkr.ecr.us-east-1.",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/fake-repo:latest"
+        ]
+       ]
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "TaskDefAppContainerLogGroup3E3EEE65"
+        },
+        "awslogs-stream-prefix": "llm-evaluator",
+        "awslogs-region": "us-east-1"
+       }
+      },
+      "Name": "llm-evaluator",
+      "PortMappings": [
+       {
+        "ContainerPort": 5001,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "512",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "TaskDefExecutionRoleB4775C97",
+      "Arn"
+     ]
+    },
+    "Family": "LlmEvaluatorStacknonprodTaskDef028FBECD",
+    "Memory": "1024",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "TaskDefTaskRole1EDB4A67",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/TaskDef/Resource"
+   }
+  },
+  "TaskDefAppContainerLogGroup3E3EEE65": {
+   "Type": "AWS::Logs::LogGroup",
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/TaskDef/AppContainer/LogGroup/Resource"
+   }
+  },
+  "TaskDefExecutionRoleB4775C97": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/TaskDef/ExecutionRole/Resource"
+   }
+  },
+  "TaskDefExecutionRoleDefaultPolicy0DBB737A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:",
+          {
+           "Ref": "AWS::Partition"
+          },
+          ":ecr:us-east-1:123456789012:repository/fake-repo"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "ecr:GetAuthorizationToken",
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TaskDefAppContainerLogGroup3E3EEE65",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TaskDefExecutionRoleDefaultPolicy0DBB737A",
+    "Roles": [
+     {
+      "Ref": "TaskDefExecutionRoleB4775C97"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/TaskDef/ExecutionRole/DefaultPolicy/Resource"
+   }
+  },
+  "ServiceLBE9A1ADBC": {
+   "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+   "Properties": {
+    "LoadBalancerAttributes": [
+     {
+      "Key": "deletion_protection.enabled",
+      "Value": "false"
+     },
+     {
+      "Key": "access_logs.s3.enabled",
+      "Value": "true"
+     },
+     {
+      "Key": "access_logs.s3.bucket",
+      "Value": {
+       "Ref": "AlbLogsBucket9F12F2B8"
+      }
+     },
+     {
+      "Key": "access_logs.s3.prefix",
+      "Value": ""
+     }
+    ],
+    "Scheme": "internet-facing",
+    "SecurityGroups": [
+     {
+      "Fn::GetAtt": [
+       "ServiceLBSecurityGroupF7435A5C",
+       "GroupId"
+      ]
+     }
+    ],
+    "Subnets": [
+     "s-12345",
+     "s-67890"
+    ],
+    "Type": "application"
+   },
+   "DependsOn": [
+    "AlbLogsBucketPolicy7C40ACF9"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/LB/Resource"
+   }
+  },
+  "ServiceLBSecurityGroupF7435A5C": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Automatically created Security Group for ELB LlmEvaluatorStacknonprodServiceLBDECADE01",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow ALB to call Cognito for token exchange",
+      "FromPort": 443,
+      "IpProtocol": "tcp",
+      "ToPort": 443
+     }
+    ],
+    "SecurityGroupIngress": [
+     {
+      "CidrIp": "1.2.3.4/5",
+      "Description": "Allow internal VPC services",
+      "FromPort": 443,
+      "IpProtocol": "tcp",
+      "ToPort": 443
+     }
+    ],
+    "VpcId": "vpc-12345"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/LB/SecurityGroup/Resource"
+   }
+  },
+  "ServiceLBSecurityGrouptoLlmEvaluatorStacknonprodServiceSecurityGroupDC330A525001FCE32D37": {
+   "Type": "AWS::EC2::SecurityGroupEgress",
+   "Properties": {
+    "Description": "Load balancer to target",
+    "DestinationSecurityGroupId": {
+     "Fn::GetAtt": [
+      "ServiceSecurityGroupEEA09B68",
+      "GroupId"
+     ]
+    },
+    "FromPort": 5001,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "ServiceLBSecurityGroupF7435A5C",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "ToPort": 5001
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/LB/SecurityGroup/to LlmEvaluatorStacknonprodServiceSecurityGroupDC330A52:5001"
+   }
+  },
+  "ServiceLBSecurityGroupfrompl00000000000000002443601C6A27": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Allow intranet access via managed prefix list",
+    "FromPort": 443,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "ServiceLBSecurityGroupF7435A5C",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourcePrefixListId": "pl-00000000000000002",
+    "ToPort": 443
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/LB/SecurityGroup/from pl-00000000000000002:443"
+   }
+  },
+  "ServiceLBPublicListener46709EAA": {
+   "Type": "AWS::ElasticLoadBalancingV2::Listener",
+   "Properties": {
+    "Certificates": [
+     {
+      "CertificateArn": "arn:aws:acm:us-east-1:123456789012:certificate/11111111-1111-1111-1111-111111111111"
+     }
+    ],
+    "DefaultActions": [
+     {
+      "AuthenticateCognitoConfig": {
+       "OnUnauthenticatedRequest": "authenticate",
+       "Scope": "openid email profile",
+       "SessionTimeout": "604800",
+       "UserPoolArn": {
+        "Fn::GetAtt": [
+         "UserPool6BA7E5F2",
+         "Arn"
+        ]
+       },
+       "UserPoolClientId": {
+        "Ref": "UserPoolClient2F5918F7"
+       },
+       "UserPoolDomain": {
+        "Ref": "UserPoolDomain5479B217"
+       }
+      },
+      "Order": 1,
+      "Type": "authenticate-cognito"
+     },
+     {
+      "ForwardConfig": {
+       "TargetGroups": [
+        {
+         "TargetGroupArn": {
+          "Ref": "ServiceLBPublicListenerECSGroup0CC8688C"
+         },
+         "Weight": 1
+        }
+       ]
+      },
+      "Order": 2,
+      "Type": "forward"
+     }
+    ],
+    "LoadBalancerArn": {
+     "Ref": "ServiceLBE9A1ADBC"
+    },
+    "Port": 443,
+    "Protocol": "HTTPS"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/LB/PublicListener/Resource"
+   }
+  },
+  "ServiceLBPublicListenerECSGroup0CC8688C": {
+   "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+   "Properties": {
+    "HealthCheckIntervalSeconds": 30,
+    "HealthCheckPath": "/healthz",
+    "HealthCheckTimeoutSeconds": 5,
+    "HealthyThresholdCount": 2,
+    "Matcher": {
+     "HttpCode": "200"
+    },
+    "Port": 80,
+    "Protocol": "HTTP",
+    "TargetGroupAttributes": [
+     {
+      "Key": "stickiness.enabled",
+      "Value": "false"
+     }
+    ],
+    "TargetType": "ip",
+    "UnhealthyThresholdCount": 3,
+    "VpcId": "vpc-12345"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/LB/PublicListener/ECSGroup/Resource"
+   }
+  },
+  "ServiceLBPublicListenerHealthCheckRule79DD114C": {
+   "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+   "Properties": {
+    "Actions": [
+     {
+      "TargetGroupArn": {
+       "Ref": "ServiceLBPublicListenerECSGroup0CC8688C"
+      },
+      "Type": "forward"
+     }
+    ],
+    "Conditions": [
+     {
+      "Field": "path-pattern",
+      "PathPatternConfig": {
+       "Values": [
+        "/healthz"
+       ]
+      }
+     }
+    ],
+    "ListenerArn": {
+     "Ref": "ServiceLBPublicListener46709EAA"
+    },
+    "Priority": 1
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/LB/PublicListener/HealthCheckRule/Resource"
+   }
+  },
+  "ServiceLBPublicRedirectListenerF055B333": {
+   "Type": "AWS::ElasticLoadBalancingV2::Listener",
+   "Properties": {
+    "DefaultActions": [
+     {
+      "RedirectConfig": {
+       "Port": "443",
+       "Protocol": "HTTPS",
+       "StatusCode": "HTTP_301"
+      },
+      "Type": "redirect"
+     }
+    ],
+    "LoadBalancerArn": {
+     "Ref": "ServiceLBE9A1ADBC"
+    },
+    "Port": 80,
+    "Protocol": "HTTP"
+   },
+   "DependsOn": [
+    "ServiceLBPublicListenerECSGroup0CC8688C",
+    "ServiceLBPublicListenerHealthCheckRule79DD114C",
+    "ServiceLBPublicListener46709EAA"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/LB/PublicRedirectListener/Resource"
+   }
+  },
+  "Service9571FDD8": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "ClusterEB0386A7"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "HealthCheckGracePeriodSeconds": 60,
+    "LaunchType": "FARGATE",
+    "LoadBalancers": [
+     {
+      "ContainerName": "llm-evaluator",
+      "ContainerPort": 5001,
+      "TargetGroupArn": {
+       "Ref": "ServiceLBPublicListenerECSGroup0CC8688C"
+      }
+     }
+    ],
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::GetAtt": [
+         "ServiceSecurityGroupEEA09B68",
+         "GroupId"
+        ]
+       }
+      ],
+      "Subnets": [
+       "p-12345",
+       "p-67890"
+      ]
+     }
+    },
+    "TaskDefinition": {
+     "Ref": "TaskDef54694570"
+    }
+   },
+   "DependsOn": [
+    "ServiceLBPublicListenerECSGroup0CC8688C",
+    "ServiceLBPublicListenerHealthCheckRule79DD114C",
+    "ServiceLBPublicListener46709EAA",
+    "TaskDefTaskRole1EDB4A67"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/Service/Service"
+   }
+  },
+  "ServiceSecurityGroupEEA09B68": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "LlmEvaluatorStack-nonprod/Service/Service/SecurityGroup",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow all outbound traffic by default",
+      "IpProtocol": "-1"
+     }
+    ],
+    "VpcId": "vpc-12345"
+   },
+   "DependsOn": [
+    "TaskDefTaskRole1EDB4A67"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/Service/SecurityGroup/Resource"
+   }
+  },
+  "ServiceSecurityGroupfromLlmEvaluatorStacknonprodServiceLBSecurityGroup485305745001A6027E8D": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Load balancer to target",
+    "FromPort": 5001,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "ServiceSecurityGroupEEA09B68",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "ServiceLBSecurityGroupF7435A5C",
+      "GroupId"
+     ]
+    },
+    "ToPort": 5001
+   },
+   "DependsOn": [
+    "TaskDefTaskRole1EDB4A67"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Service/Service/SecurityGroup/from LlmEvaluatorStacknonprodServiceLBSecurityGroup48530574:5001"
+   }
+  },
+  "AlbLogsBucket9F12F2B8": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketEncryption": {
+     "ServerSideEncryptionConfiguration": [
+      {
+       "ServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+       }
+      }
+     ]
+    },
+    "BucketName": "llm-evaluator-alb-logs-nonprod-123456789012",
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/AlbLogsBucket/Resource"
+   }
+  },
+  "AlbLogsBucketPolicy7C40ACF9": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "AlbLogsBucket9F12F2B8"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:PutBucketPolicy",
+        "s3:GetBucket*",
+        "s3:List*",
+        "s3:DeleteObject*"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AlbLogsBucket9F12F2B8",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "AlbLogsBucket9F12F2B8",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::Join": [
+          "",
+          [
+           "arn:",
+           {
+            "Ref": "AWS::Partition"
+           },
+           ":iam::127311923021:root"
+          ]
+         ]
+        }
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "AlbLogsBucket9F12F2B8",
+            "Arn"
+           ]
+          },
+          "/AWSLogs/123456789012/*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:PutObject",
+       "Condition": {
+        "StringEquals": {
+         "s3:x-amz-acl": "bucket-owner-full-control"
+        }
+       },
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "delivery.logs.amazonaws.com"
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "AlbLogsBucket9F12F2B8",
+            "Arn"
+           ]
+          },
+          "/AWSLogs/123456789012/*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:GetBucketAcl",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "delivery.logs.amazonaws.com"
+       },
+       "Resource": {
+        "Fn::GetAtt": [
+         "AlbLogsBucket9F12F2B8",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/AlbLogsBucket/Policy/Resource"
+   }
+  },
+  "AlbLogsBucketAutoDeleteObjectsCustomResource63D08B54": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "AlbLogsBucket9F12F2B8"
+    }
+   },
+   "DependsOn": [
+    "AlbLogsBucketPolicy7C40ACF9"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/AlbLogsBucket/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+     "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs22.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "AlbLogsBucket9F12F2B8"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+    "aws:asset:property": "Code"
+   }
+  },
+  "DnsRecord68F7FB14": {
+   "Type": "AWS::Route53::RecordSet",
+   "Properties": {
+    "AliasTarget": {
+     "DNSName": {
+      "Fn::Join": [
+       "",
+       [
+        "dualstack.",
+        {
+         "Fn::GetAtt": [
+          "ServiceLBE9A1ADBC",
+          "DNSName"
+         ]
+        }
+       ]
+      ]
+     },
+     "HostedZoneId": {
+      "Fn::GetAtt": [
+       "ServiceLBE9A1ADBC",
+       "CanonicalHostedZoneID"
+      ]
+     }
+    },
+    "HostedZoneId": "DUMMY",
+    "Name": "llm-evaluator.aidev-nonprod.example.internal.",
+    "Type": "A"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/DnsRecord/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/31S227bMAz9lr4r6uagH5Ck2zCgwAK7ey5UmTXYKKJBUikCwf8+WI4zryv6xHMOD0ldWNnq69p+uXFvsvLtYRXw2eZGnT+YGoQSezDuTZ6ypy6iks2/BXhPFMzuJV7xDHYBIeoydVFmek9Hh3FpmJTBgGdbQ0+CSnzeOgEDXmzehSQKPJbM8Lvjzik8OjncwwtGVKTS871CUR1G4IV2qW2AT+hhLLrAwaA72lxTKGqJewrozyOd0GACdWLzA3U/mFI/ZmY83kCeeqcKHMVu+j6gd+PMB3Lt1gUXPbTvxkNwougDufa5ODB2p8rmj6t5mrfgSx+KQrx4ZrzIPzruQK/HXtIPutRpeoYlH29Y2dyAT4x6vrb6XPjWMYj8J/+MRR+MrG3eJn+AsjYXNIW/z7/kg2FKCndrmzc1eOK2/FdBDegwjPRX0j6p2SVROl43ufhm/E9qz3TCFrjs3UYEtFHXYewGE6kF+yq3p6qy1dpWN6+CuOIUFY9g6yn+AX39Om1IAwAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LlmEvaluatorStack-nonprod/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "ServiceLoadBalancerDNSEC5B149E": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ServiceLBE9A1ADBC",
+     "DNSName"
+    ]
+   }
+  },
+  "ServiceServiceURL250C0FB6": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Fn::GetAtt": [
+        "ServiceLBE9A1ADBC",
+        "DNSName"
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  "AppUrl": {
+   "Description": "LLM Evaluator URL",
+   "Value": "https://llm-evaluator.aidev-nonprod.example.internal"
+  },
+  "LoadBalancerDNS": {
+   "Description": "Load Balancer DNS name",
+   "Value": {
+    "Fn::GetAtt": [
+     "ServiceLBE9A1ADBC",
+     "DNSName"
+    ]
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

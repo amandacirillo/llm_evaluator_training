@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run pytest
+        run: python -m pytest tests/ -v
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demo/ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: demo/ui/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run vitest
+        run: npm test
+      - name: Build production bundle
+        run: npm run build
+
+  cdk-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cdk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: cdk/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Type-check the CDK app
+        run: npx tsc --noEmit
+      # NOTE: `cdk synth` for this stack requires a real AWS account/VPC (it
+      # uses ec2.Vpc.fromLookup against `config/environments.ts`), so CI only
+      # type-checks the stack rather than synthesizing it.

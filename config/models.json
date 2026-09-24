@@ -1,0 +1,11 @@
+{
+  "_comment": "Curated allow-list of models offered in the picker. Edit `allowed_models` to control which models appear. Leave the array empty to show every model your LiteLLM key can reach. Ids you list here are validated against the proxy, so a typo simply won't appear.",
+  "allowed_models": [
+    "GPT-5.2",
+    "GPT-5",
+    "GPT-5-mini",
+    "GPT-5.4",
+    "GPT-5.4-mini",
+    "GPT-5.5"
+  ]
+}
