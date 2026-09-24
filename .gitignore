@@ -15,6 +15,10 @@ demo/ui/dist/
 demo/ui/.vite/
 *.tsbuildinfo
 
+# CDK
+cdk/cdk.out/
+cdk/cdk.context.json
+
 # OS / editor
 .DS_Store
 Thumbs.db
