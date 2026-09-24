@@ -1,11 +1,13 @@
 # LLM Evaluator — Model Comparison & Scoring
 
-> **About this repo.** This is a personal project I designed and built (not a
-> from-scratch recreation like my other `_training` repos). It's published here
-> lightly sanitized: internal product/codenames, employer domain names, and
-> real AWS resource IDs (VPC/subnet/certificate/prefix-list IDs) have been
-> swapped for generic placeholders. The architecture, pipeline logic, and
-> tests are otherwise unchanged from what I actually built and use.
+> **About this repo.** This was built collaboratively with a small team at my
+> employer (not a solo personal project, and not a from-scratch recreation like
+> my other `_training` repos). I was a co-contributor to the design and
+> implementation. It's published here lightly sanitized: internal
+> product/codenames, employer domain names, and real AWS resource IDs
+> (VPC/subnet/certificate/prefix-list IDs) have been swapped for generic
+> placeholders. The architecture, pipeline logic, and tests are otherwise
+> unchanged from what we actually built.
 
 Send one prompt to up to three AI models, see their outputs **side by side**, and
 get an **objective pass/fail grade** of how well each output met the prompt's
